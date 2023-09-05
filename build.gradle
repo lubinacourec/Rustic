@@ -19,26 +19,26 @@ apply plugin: 'com.wynprice.cursemaven'
 repositories {
     maven { // JEI & Tinkers
         name 'DVS1 Maven FS'
-        url 'http://dvs1.progwml6.com/files/maven'
+        url 'https://dvs1.progwml6.com/files/maven'
     }
 	maven { // CraftTweaker
         name 'jared maven'
-        url "http://maven.blamejared.com/"
+        url "https://maven.blamejared.com/"
     }
     maven { // TOP
         name 'tterrag maven'
-        url "http://maven.tterrag.com/"
+        url "https://maven.tterrag.com/"
     }
 	maven { // HWYLA
-		url "http://tehnut.info/maven"
+		url "https://tehnut.info/maven"
 	}
     maven {
         name "CoFH"
-        url "http://maven.covers1624.net"
+        url "https://maven.covers1624.net"
     }
 	maven {
         name "AppleCore"
-		url "http://www.ryanliptak.com/maven/"
+		url "https://www.ryanliptak.com/maven/"
 	}
     maven {
         name "CurseForge"
@@ -46,7 +46,10 @@ repositories {
     }
     maven {
         name "IC2 Forestry"
-        url "http://maven.ic2.player.to/"
+        url "https://maven.ic2.player.to/"
+    }
+    maven {
+        url "https://cursemaven.com"
     }
 }
 
