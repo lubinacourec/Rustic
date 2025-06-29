@@ -1,6 +1,10 @@
 package rustic.client.util;
 
+import java.util.UUID;
+
 import org.lwjgl.opengl.GL11;
+
+import com.mojang.authlib.GameProfile;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.BufferBuilder;
@@ -9,9 +13,12 @@ import net.minecraft.client.renderer.block.model.BakedQuad;
 import net.minecraft.client.renderer.block.model.IBakedModel;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
+import net.minecraft.client.resources.I18n;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.math.MathHelper;
+import net.minecraft.util.text.TextFormatting;
+import rustic.core.Rustic;
 
 public class ClientUtils {
 	
@@ -99,6 +106,72 @@ public class ClientUtils {
 		
 		int color = (a << 24) | (r << 16) | (g << 8) | (b);
 		return color;
+	}
+	
+	public static String getQualityTooltip(float quality) {
+		int qualityVariant = 0;
+		
+		Minecraft mc = Minecraft.getMinecraft();
+		UUID playerId = null;
+		if (mc.player != null) {
+			playerId = mc.player.getUniqueID();
+		} else if (mc.getSession() != null) {
+			GameProfile profile = mc.getSession().getProfile();
+			if ((profile != null) && (profile.getId() != null)) {
+				playerId = profile.getId();
+			}
+		}
+		if (playerId != null) {
+			if (playerId.equals(Rustic.ERIS_UUID)) {
+				qualityVariant = 7;
+			} else {				
+				qualityVariant = playerId.hashCode() & 7;
+			}
+		}
+		
+		String tier = null;
+		TextFormatting qualityColor = TextFormatting.GRAY;
+		if (quality >= 0.89999F) {
+			tier = "highest";
+			qualityColor = TextFormatting.GOLD;
+		} else if (quality >= 0.69999F) {
+			tier = "high";
+			qualityColor = TextFormatting.LIGHT_PURPLE;
+		} else if (quality >= 0.5F) {
+			tier = "highish";
+			qualityColor = TextFormatting.AQUA;
+		} else if (quality >= 0.35F) {
+			tier = "lowish";
+			qualityColor = TextFormatting.YELLOW;
+		} else if (quality >= 0.2F) {
+			tier = "low";
+			qualityColor = TextFormatting.DARK_PURPLE;
+		} else {
+			tier = "lowest";
+			qualityColor = TextFormatting.DARK_RED;
+		}
+		
+		return TextFormatting.GRAY + I18n.format(
+					"tooltip.rustic.quality.desc",
+					qualityColor + I18n.format("tooltip.rustic.quality." + tier + "." + qualityVariant),
+					String.format("%.0f%%", quality * 100)
+				);
+	}
+	
+	public static int getQualityLabelColor(float quality) {
+		if (quality >= 0.89999F) {
+			return 0xC29311; // highest tier, gold
+		} else if (quality >= 0.69999F) {
+			return 0x4A7ABD; // high tier, blue
+		} else if (quality >= 0.5F) {
+			return 0xDBD3BD; // high-ish tier, parchment
+		} else if (quality >= 0.35F) {
+			return 0xDBD3BD; // low-ish tier, parchment
+		} else if (quality >= 0.2F) {
+			return 0xBAA911; // low tier, yellow
+		} else {
+			return 0x222222; // lowest tier, black
+		}
 	}
 
 }

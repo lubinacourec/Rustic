@@ -33,6 +33,7 @@ public class Herbs {
 	public static BlockHerbBase MARSH_MALLOW_CROP;
 	public static BlockHerbBase MOONCAP;
 	public static BlockHerbBase WIND_THISTLE;
+	public static BlockHerbBase VANTA_LILY;
 	
 	public static ItemHerbEdible CLOUDSBLUFF;
 	public static ItemHerbEdible CORE_ROOT;
@@ -186,8 +187,24 @@ public class Herbs {
 			}
 		};
 		Blocks.FIRE.setFireInfo(WIND_THISTLE, 60, 100);
-		
+		VANTA_LILY = new BlockHerbBase("vanta_lily", false) {
+			@Override
+			public EnumPlantType getPlantType(IBlockAccess world, BlockPos pos) {
+				return EnumPlantType.Plains;
+			}
+
+			@Override
+			public Item getHerb() {
+				return Item.getItemFromBlock(this);
+			}
+		};
+		Blocks.FIRE.setFireInfo(VANTA_LILY, 60, 100);
+				
 		CLOUDSBLUFF = new ItemHerbEdible(CLOUDSBLUFF_CROP, 2, 0.2F) {
+			@Override
+			public void initFood() {
+				this.setAlwaysEdible();
+			}
 			@Override
 			protected void onFoodEaten(ItemStack stack, World worldIn, EntityPlayer player) {
 				if (!worldIn.isRemote) {
@@ -212,6 +229,7 @@ public class Herbs {
 		MARSH_MALLOW_CROP.initModel();
 		MOONCAP.initModel();
 		WIND_THISTLE.initModel();
+		VANTA_LILY.initModel();
 		
 		CLOUDSBLUFF.initModel();
 		CORE_ROOT.initModel();
@@ -245,11 +263,13 @@ public class Herbs {
 			herbs.add(COHOSH);
 			herbs.add(GINSENG_CROP);
 			herbs.add(HORSETAIL);
+			herbs.add(VANTA_LILY);
 		} else if (BiomeDictionary.hasType(biome, BiomeDictionary.Type.PLAINS) && !BiomeDictionary.hasType(biome, BiomeDictionary.Type.SNOWY)) {
 			herbs.add(CHAMOMILE);
 			herbs.add(GINSENG_CROP);
 			herbs.add(HORSETAIL);
 			herbs.add(WIND_THISTLE);
+			herbs.add(VANTA_LILY);
 		} else {
 			return null;
 		}

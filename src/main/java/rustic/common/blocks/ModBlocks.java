@@ -1,10 +1,20 @@
 package rustic.common.blocks;
 
+import java.util.Random;
+
+import net.minecraft.block.Block;
 import net.minecraft.block.SoundType;
 import net.minecraft.block.material.Material;
+import net.minecraft.block.state.IBlockState;
+import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Blocks;
 import net.minecraft.item.Item;
+import net.minecraft.item.ItemStack;
+import net.minecraft.util.EnumFacing;
+import net.minecraft.util.EnumHand;
 import net.minecraft.util.ResourceLocation;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.world.World;
 import net.minecraftforge.fml.common.registry.GameRegistry;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
@@ -57,14 +67,17 @@ public class ModBlocks {
 	public static BlockClayWallDiag CLAY_WALL_DIAG;
 	public static BlockChain CHAIN;
 	public static BlockCandle CANDLE;
+	public static BlockCandleDouble CANDLE_DOUBLE;
 	public static BlockCandle CANDLE_LEVER;
 	public static BlockChandelier CHANDELIER;
 	public static BlockChain CHAIN_GOLD;
 	public static BlockCandle CANDLE_GOLD;
+	public static BlockCandleDouble CANDLE_DOUBLE_GOLD;
 	public static BlockCandle CANDLE_LEVER_GOLD;
 	public static BlockChandelier CHANDELIER_GOLD;
 	public static BlockChain CHAIN_SILVER;
 	public static BlockCandle CANDLE_SILVER;
+	public static BlockCandleDouble CANDLE_DOUBLE_SILVER;
 	public static BlockCandle CANDLE_LEVER_SILVER;
 	public static BlockChandelier CHANDELIER_SILVER;
 	public static BlockBeehive BEEHIVE;
@@ -165,15 +178,18 @@ public class ModBlocks {
 		}
 		CHAIN = new BlockChain();
 		CANDLE = new BlockCandle();
+		CANDLE_DOUBLE = new BlockCandleDouble();
 		CANDLE_LEVER = new BlockCandleLever();
 		CHANDELIER = new BlockChandelier();
 		CHAIN_GOLD = new BlockChain("chain_gold");
 		CANDLE_GOLD = new BlockCandle("candle_gold");
+		CANDLE_DOUBLE_GOLD = new BlockCandleDouble("candle_double_gold");
 		CANDLE_LEVER_GOLD = new BlockCandleLever("candle_lever_gold");
 		CHANDELIER_GOLD = new BlockChandelier("chandelier_gold");
 		if (Config.ENABLE_SILVER_DECOR) {
 			CHAIN_SILVER = new BlockChain("chain_silver");
 			CANDLE_SILVER = new BlockCandle("candle_silver");
+			CANDLE_DOUBLE_SILVER = new BlockCandleDouble("candle_double_silver");
 			CANDLE_LEVER_SILVER = new BlockCandleLever("candle_lever_silver");
 			CHANDELIER_SILVER = new BlockChandelier("chandelier_silver");
 		}
@@ -346,6 +362,12 @@ public class ModBlocks {
 			public Item getCrop() {
 				return ModItems.CHILI_PEPPER;
 			}
+			
+			@Override
+			protected Item getCrop(Random rand) {
+				if (rand == null) return this.getCrop();
+				return (rand.nextInt(42) == 0) ? ModItems.GHOST_PEPPER : this.getCrop();
+			}
 
 			@Override
 			public Item getSeed() {
@@ -403,15 +425,18 @@ public class ModBlocks {
 		}
 		CHAIN.initModel();
 		CANDLE.initModel();
+		CANDLE_DOUBLE.initModel();
 		CANDLE_LEVER.initModel();
 		CHANDELIER.initModel();
 		CHAIN_GOLD.initModel();
 		CANDLE_GOLD.initModel();
+		CANDLE_DOUBLE_GOLD.initModel();
 		CANDLE_LEVER_GOLD.initModel();
 		CHANDELIER_GOLD.initModel();
 		if (Config.ENABLE_SILVER_DECOR) {
 			CHAIN_SILVER.initModel();
 			CANDLE_SILVER.initModel();
+			CANDLE_DOUBLE_SILVER.initModel();
 			CANDLE_LEVER_SILVER.initModel();
 			CHANDELIER_SILVER.initModel();
 		}

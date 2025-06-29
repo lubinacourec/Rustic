@@ -1,9 +1,17 @@
 package rustic.core;
 
 import java.io.File;
+import java.net.URL;
+import java.net.URLClassLoader;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Set;
 
 import net.minecraft.block.BlockDispenser;
+import net.minecraft.entity.passive.EntityChicken;
 import net.minecraft.item.Item;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.World;
 import net.minecraftforge.common.config.Configuration;
 import net.minecraftforge.fluids.FluidRegistry;
@@ -73,6 +81,12 @@ public class CommonProxy {
     	
     	BlockDispenser.DISPENSE_BEHAVIOR_REGISTRY.putObject(Item.getItemFromBlock(ModBlocks.ROPE), DispenseRope.getInstance());
     	
+    	Set<Item> chickenTemptItems = EntityChicken.TEMPTATION_ITEMS;
+    	chickenTemptItems.add(ModItems.CHILI_PEPPER_SEEDS);
+    	chickenTemptItems.add(ModItems.TOMATO_SEEDS);
+    	chickenTemptItems.add(Item.getItemFromBlock(ModBlocks.APPLE_SEEDS));
+    	chickenTemptItems.add(Item.getItemFromBlock(ModBlocks.GRAPE_STEM));
+    	
     	BookManager.init();
     }
     
@@ -87,6 +101,8 @@ public class CommonProxy {
     	if (FluidRegistry.isFluidRegistered("for.honey")) {
     		ItemFluidBottle.addFluid(FluidRegistry.getFluid("for.honey"));
     	}
+    	ItemFluidBottle.addFluid(ModFluids.GOLDEN_APPLE_JUICE);
+    	ItemFluidBottle.addFluid(ModFluids.VANTA_OIL);
     	
     	ItemFluidBottle.addFluid(ModFluids.ALE);
     	ItemFluidBottle.addFluid(ModFluids.CIDER);
@@ -94,10 +110,13 @@ public class CommonProxy {
     	ItemFluidBottle.addFluid(ModFluids.MEAD);
     	ItemFluidBottle.addFluid(ModFluids.WILDBERRY_WINE);
     	ItemFluidBottle.addFluid(ModFluids.WINE);
+    	ItemFluidBottle.addFluid(ModFluids.AMBROSIA);
     }
     
     public void spawnAlchemySmokeFX(World world, int brewTime, double x, double y, double z, double xVel, double yVel, double zVel) {
-    	
+    }
+    
+    public void disableIronSkinRenderer(String entityName) {
     }
 	
 }

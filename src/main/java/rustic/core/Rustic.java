@@ -1,5 +1,7 @@
 package rustic.core;
 
+import java.util.UUID;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -30,6 +32,7 @@ import net.minecraftforge.fml.relauncher.SideOnly;
 import rustic.client.EventHandlerClient;
 import rustic.common.Config;
 import rustic.common.EventHandlerCommon;
+import rustic.common.advancements.ModAdvancements;
 import rustic.common.blocks.ModBlocks;
 import rustic.common.blocks.fluids.ModFluids;
 import rustic.common.crafting.Recipes;
@@ -43,7 +46,7 @@ import rustic.compat.dynamictrees.DynamicTreesCompat;
 public class Rustic {
 	public static final String MODID = "rustic";
 	public static final String NAME = "Rustic";
-	public static final String VERSION = "1.1.7";
+	public static final String VERSION = "1.2.0";
 	public static final String DEPENDENCIES = "after:dynamictrees@[1.12.2-0.9.1e,);after:dynamictreesbop;before:dynamictreestc";
 
 	@SidedProxy(clientSide = "rustic.core.ClientProxy", serverSide = "rustic.core.CommonProxy")
@@ -119,6 +122,8 @@ public class Rustic {
 	public static Rustic instance;
 	
 	public static final Logger logger = LogManager.getLogger(MODID);
+	
+	public static final UUID ERIS_UUID = UUID.fromString("8167f7a5-2db0-42ca-b177-ebc1396dbe55");
 
 	static {
 		FluidRegistry.enableUniversalBucket();
@@ -142,6 +147,8 @@ public class Rustic {
 		if (Loader.isModLoaded("dynamictrees")) {
 			MinecraftForge.EVENT_BUS.register(DynamicTreesCompat.class);
 		}
+		
+		ModAdvancements.preInit();
 	}
 	
 	@SubscribeEvent
@@ -169,4 +176,5 @@ public class Rustic {
 		// Fix for Rustic Thaumaturgy adding recipes directly in the data structure
 		Recipes.injectEvaporatingRecipes();
 	}
+	
 }

@@ -6,13 +6,18 @@ import java.util.List;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
+import net.minecraft.advancements.CriteriaTriggers;
 import net.minecraft.client.renderer.ItemMeshDefinition;
 import net.minecraft.client.renderer.block.model.ModelResourceLocation;
+import net.minecraft.client.renderer.color.IItemColor;
+import net.minecraft.client.util.ITooltipFlag;
 import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.init.Items;
 import net.minecraft.item.EnumAction;
+import net.minecraft.item.EnumRarity;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
@@ -22,6 +27,7 @@ import net.minecraft.util.EnumActionResult;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.EnumHand;
 import net.minecraft.util.NonNullList;
+import net.minecraft.util.text.TextFormatting;
 import net.minecraft.util.text.translation.I18n;
 import net.minecraft.world.World;
 import net.minecraftforge.client.model.ModelLoader;
@@ -37,13 +43,18 @@ import net.minecraftforge.fml.common.registry.GameRegistry;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 import rustic.client.models.FluidBottleModel;
+import rustic.client.util.ClientUtils;
 import rustic.common.blocks.fluids.FluidBooze;
 import rustic.common.blocks.fluids.FluidDrinkable;
 import rustic.common.blocks.fluids.ModFluids;
+import rustic.common.util.RusticUtils;
+import rustic.core.ClientProxy;
 import rustic.core.Rustic;
 
-public class ItemFluidBottle extends ItemFluidContainer {
+public class ItemFluidBottle extends ItemFluidContainer implements IColoredItem {
 
+	protected static final CreativeTabs[] creative_tabs = { Rustic.farmingTab, Rustic.alchemyTab, };
+	
 	public static List<Fluid> VALID_FLUIDS = new ArrayList<Fluid>();
 	public static final String FLUID_NBT_KEY = "Fluid";
 
@@ -72,11 +83,12 @@ public class ItemFluidBottle extends ItemFluidContainer {
 		};
 		ModelLoader.setCustomMeshDefinition(this, meshDefinition);
 		ModelLoader.registerItemVariants(this, FluidBottleModel.LOCATION);
+		ClientProxy.addColoredItem(this);
 	}
 
 	@SideOnly(Side.CLIENT)
 	public ItemStack getDefaultInstance() {
-		NBTTagCompound nbt = new FluidStack(ModFluids.OLIVE_OIL, 1000).writeToNBT(new NBTTagCompound());
+		NBTTagCompound nbt = new FluidStack(ModFluids.OLIVE_OIL, this.getCapacity()).writeToNBT(new NBTTagCompound());
 		ItemStack stack = super.getDefaultInstance();
 		NBTTagCompound tag = new NBTTagCompound();
 		tag.setTag(FLUID_NBT_KEY, nbt);
@@ -99,6 +111,28 @@ public class ItemFluidBottle extends ItemFluidContainer {
 
 		return bottle;
 	}
+	
+	@Override
+	@SideOnly(Side.CLIENT)
+	public IItemColor getItemColor() {
+		return new IItemColor() {
+			@Override
+			public int colorMultiplier(ItemStack stack, int tintIndex) {
+				if (tintIndex == 2) {
+					FluidStack fluidstack = ItemFluidBottle.this.getFluid(stack);
+					Fluid fluid = fluidstack.getFluid() != null ? fluidstack.getFluid() : null;
+					if ((fluidstack.getFluid() != null) && (fluidstack.getFluid() instanceof FluidBooze)) {
+						float quality = 0.5f;
+						if (fluidstack.tag != null && fluidstack.tag.hasKey(FluidBooze.QUALITY_NBT_KEY, 5)) {
+							quality = fluidstack.tag.getFloat(FluidBooze.QUALITY_NBT_KEY);
+						}
+						return ClientUtils.getQualityLabelColor(quality);
+					}
+				}
+				return 0xFFFFFF;
+			}
+		};
+	}
 
 	public ItemStack onItemUseFinish(ItemStack stack, World worldIn, EntityLivingBase entityLiving) {
 		EntityPlayer entityplayer = entityLiving instanceof EntityPlayer ? (EntityPlayer) entityLiving : null;
@@ -113,19 +147,20 @@ public class ItemFluidBottle extends ItemFluidContainer {
 
 		if (entityplayer != null) {
 			entityplayer.addStat(StatList.getObjectUseStats(this));
+			
+			if (entityplayer instanceof EntityPlayerMP) {
+	            CriteriaTriggers.CONSUME_ITEM.trigger((EntityPlayerMP) entityplayer, stack);
+	        }
 		}
 
-		if (entityplayer == null || !entityplayer.capabilities.isCreativeMode) {
+		if ((entityplayer == null) || !entityplayer.capabilities.isCreativeMode) {
 			stack.shrink(1);
-		}
-
-		if (entityplayer == null || !entityplayer.capabilities.isCreativeMode) {
+			
 			if (stack.isEmpty()) {
 				return new ItemStack(Items.GLASS_BOTTLE);
-			}
-
-			if (entityplayer != null) {
-				entityplayer.inventory.addItemStackToInventory(new ItemStack(Items.GLASS_BOTTLE));
+			} else if (entityplayer != null) {
+				RusticUtils.givePlayerItem(entityplayer, new ItemStack(Items.GLASS_BOTTLE));
+				//entityplayer.inventory.addItemStackToInventory(new ItemStack(Items.GLASS_BOTTLE));
 			}
 		}
 
@@ -174,6 +209,15 @@ public class ItemFluidBottle extends ItemFluidContainer {
 	}
 
 	@Override
+	public EnumRarity getRarity(ItemStack stack) {
+		FluidStack fluidStack = getFluid(stack);
+		if ((fluidStack != null) && (fluidStack.getFluid() != null)) {
+			return fluidStack.getFluid().getRarity(fluidStack);
+		}
+		return super.getRarity(stack);
+	}
+	
+	@Override
 	@Nonnull
 	public String getItemStackDisplayName(@Nonnull ItemStack stack) {
 		FluidStack fluidStack = getFluid(stack);
@@ -185,32 +229,51 @@ public class ItemFluidBottle extends ItemFluidContainer {
 
 		return I18n.translateToLocalFormatted(unloc + ".name", fluidStack.getLocalizedName());
 	}
+	
+	@Override
+	@SideOnly(Side.CLIENT)
+	public void addInformation(ItemStack stack, @Nullable World worldIn, List<String> tooltip, ITooltipFlag flagIn) {
+		FluidStack fluidStack = getFluid(stack);
+		if ((fluidStack != null) && (fluidStack.getFluid() != null) && (fluidStack.getFluid() instanceof FluidDrinkable)) {
+			tooltip.add(TextFormatting.DARK_GRAY + "" + TextFormatting.ITALIC + I18n.translateToLocalFormatted("tooltip.rustic.drinkable"));
+		}
+	}
+	
+	@Override
+	public CreativeTabs[] getCreativeTabs() {
+		return creative_tabs;
+	}
 
 	@Override
 	public void getSubItems(CreativeTabs tab, NonNullList<ItemStack> subItems) {
 		if (isInCreativeTab(tab)) {
-			for (Fluid fluid : VALID_FLUIDS) {
-				ItemStack stack = getFilledBottle(fluid);
-				if (fluid instanceof FluidBooze) {
-					if (stack.hasTagCompound() && stack.getTagCompound().hasKey(FluidHandlerItemStack.FLUID_NBT_KEY)) {
-						NBTTagCompound fluidTag = stack.getTagCompound()
-								.getCompoundTag(FluidHandlerItemStack.FLUID_NBT_KEY);
-						if (!fluidTag.hasKey("Tag")) {
-							fluidTag.setTag("Tag", new NBTTagCompound());
-						}
-						if (!fluidTag.getCompoundTag("Tag").hasKey(FluidBooze.QUALITY_NBT_KEY)) {
-							fluidTag.getCompoundTag("Tag").setFloat(FluidBooze.QUALITY_NBT_KEY, 0.75F);
+			if (tab == Rustic.farmingTab) {
+				for (Fluid fluid : VALID_FLUIDS) {
+					ItemStack stack = getFilledBottle(fluid);
+					if (fluid instanceof FluidBooze) {
+						if (stack.hasTagCompound() && stack.getTagCompound().hasKey(FluidHandlerItemStack.FLUID_NBT_KEY)) {
+							NBTTagCompound fluidTag = stack.getTagCompound()
+									.getCompoundTag(FluidHandlerItemStack.FLUID_NBT_KEY);
+							if (!fluidTag.hasKey("Tag")) {
+								fluidTag.setTag("Tag", new NBTTagCompound());
+							}
+							if (!fluidTag.getCompoundTag("Tag").hasKey(FluidBooze.QUALITY_NBT_KEY)) {
+								fluidTag.getCompoundTag("Tag").setFloat(FluidBooze.QUALITY_NBT_KEY, 0.75F);
+							}
 						}
 					}
+					subItems.add(stack);
 				}
-				subItems.add(stack);
+			} else if (tab == Rustic.alchemyTab) {
+				ItemStack oilStack = getFilledBottle(ModFluids.VANTA_OIL);
+				subItems.add(oilStack);
 			}
 		}
 	}
 
 	@Override
 	public ICapabilityProvider initCapabilities(@Nonnull ItemStack stack, @Nullable NBTTagCompound nbt) {
-		FluidHandlerItemStack.SwapEmpty handler = new FluidHandlerItemStack.SwapEmpty(stack, empty, capacity) {
+		FluidHandlerItemStack.SwapEmpty handler = new FluidHandlerItemStack.SwapEmpty(stack, empty.copy(), capacity) {
 			@Override
 			public boolean canFillFluidType(FluidStack fluidstack) {
 				return ItemFluidBottle.VALID_FLUIDS.contains(fluidstack.getFluid());
@@ -218,23 +281,23 @@ public class ItemFluidBottle extends ItemFluidContainer {
 
 			@Override
 			public int fill(FluidStack resource, boolean doFill) {
-				if (resource == null || resource.amount < Fluid.BUCKET_VOLUME || getFluid() != null
+				if (resource == null || resource.amount < this.capacity || getFluid() != null
 						|| !canFillFluidType(resource)) {
 					return 0;
 				}
 				if (doFill) {
 					setFluid(resource.copy());
 				}
-				return Fluid.BUCKET_VOLUME;
+				return this.capacity;
 			}
 
 			protected void setFluid(@Nullable FluidStack fluid) {
 				if (fluid == null) {
-					container = new ItemStack(Items.GLASS_BOTTLE);
+					container = this.emptyContainer;
 				} else {
-					container = new ItemStack(ModItems.FLUID_BOTTLE);
+					container = new ItemStack(ItemFluidBottle.this, 1);
 					FluidStack fs = fluid.copy();
-					fs.amount = 1000;
+					fs.amount = this.capacity;
 					NBTTagCompound fluidTag = fs.writeToNBT(new NBTTagCompound());
 					NBTTagCompound tag = new NBTTagCompound();
 					tag.setTag(FLUID_NBT_KEY, fluidTag);
@@ -244,7 +307,7 @@ public class ItemFluidBottle extends ItemFluidContainer {
 
 			@Override
 			public FluidStack drain(FluidStack resource, boolean doDrain) {
-				if (resource == null || resource.amount < Fluid.BUCKET_VOLUME) {
+				if (resource == null || resource.amount < this.capacity) {
 					return null;
 				}
 				return super.drain(resource, doDrain);
@@ -252,7 +315,7 @@ public class ItemFluidBottle extends ItemFluidContainer {
 
 			@Override
 			public FluidStack drain(int maxDrain, boolean doDrain) {
-				if (maxDrain < Fluid.BUCKET_VOLUME) {
+				if (maxDrain < this.capacity) {
 					return null;
 				}
 				return super.drain(maxDrain, doDrain);
@@ -263,7 +326,7 @@ public class ItemFluidBottle extends ItemFluidContainer {
 			public ItemStack getContainer() {
 				FluidStack contained = getFluid();
 				if (contained == null || contained.getFluid() == null || contained.amount <= 0) {
-					return new ItemStack(Items.GLASS_BOTTLE);
+					return this.emptyContainer;
 				}
 				return container;
 			}

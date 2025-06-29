@@ -16,6 +16,7 @@ import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.crafting.IRecipe;
 import net.minecraft.item.crafting.Ingredient;
+import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.potion.PotionEffect;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.fluids.Fluid;
@@ -34,6 +35,7 @@ import rustic.common.blocks.BlockPlanksRustic;
 import rustic.common.blocks.BlockSaplingRustic;
 import rustic.common.blocks.ModBlocks;
 import rustic.common.blocks.crops.Herbs;
+import rustic.common.blocks.fluids.FluidBooze;
 import rustic.common.blocks.fluids.ModFluids;
 import rustic.common.items.ModItems;
 import rustic.common.potions.PotionsRustic;
@@ -179,6 +181,7 @@ public class Recipes {
 			GameRegistry.addSmelting(new ItemStack(ModBlocks.LOG, 1, meta), new ItemStack(Items.COAL, 1, 1), 0.15F);
 		}
 		GameRegistry.addSmelting(new ItemStack(ModItems.IRON_DUST_TINY), new ItemStack(Items.IRON_NUGGET), 0.15F);
+		GameRegistry.addSmelting(new ItemStack(ModItems.GOLD_DUST), new ItemStack(Items.GOLD_INGOT), 0.5F);
 		if (Config.FLESH_SMELTING) {
 			GameRegistry.addSmelting(new ItemStack(Items.ROTTEN_FLESH), new ItemStack(ModItems.TALLOW), 0.3F);
 		}
@@ -193,7 +196,7 @@ public class Recipes {
 					return 100;
 				}
 				if (item == Item.getItemFromBlock(ModBlocks.WILDBERRY_BUSH)) {
-					return 150;
+					return 200;
 				}
 				return 0;
 			}
@@ -282,10 +285,13 @@ public class Recipes {
 		OreDictionary.registerOre("materialHoneycomb", new ItemStack(ModItems.HONEYCOMB));
 
 		OreDictionary.registerOre("dustTinyIron", new ItemStack(ModItems.IRON_DUST_TINY));
+		OreDictionary.registerOre("dustGold", new ItemStack(ModItems.GOLD_DUST));
 		
 		OreDictionary.registerOre("dyeRed", new ItemStack(ModItems.WILDBERRIES));
 		OreDictionary.registerOre("dyePurple", new ItemStack(ModItems.GRAPES));
 		OreDictionary.registerOre("dyeLightGray", new ItemStack(ModItems.IRONBERRIES));
+		
+		OreDictionary.registerOre("dyeBlack", new ItemStack(Herbs.VANTA_LILY));
 	}
 	
 	private static void addCraftingRecipes() {
@@ -433,6 +439,10 @@ public class Recipes {
 			GameRegistry.findRegistry(IRecipe.class).register(new RecipeOliveOil().setRegistryName(new ResourceLocation(Rustic.MODID, "olive_oiling")));
 		}
 		
+		RecipeSorter.register("rustic:vanta_oil", RecipeVantaOil.class, RecipeSorter.Category.SHAPELESS,
+				"after:minecraft:shapeless");
+		GameRegistry.findRegistry(IRecipe.class).register(new RecipeVantaOil().setRegistryName(new ResourceLocation(Rustic.MODID, "vanta_oiling")));
+		
 		if (Loader.isModLoaded("dynamictrees")) {
 			GameRegistry.addShapelessRecipe(new ResourceLocation(Rustic.MODID, "oliveseed"), null, new ItemStack(DynamicTreesCompat.getOliveSeed()), Ingredient.fromItem(ModItems.OLIVES));
 			GameRegistry.addShapelessRecipe(new ResourceLocation(Rustic.MODID, "ironwoodseed"), null, new ItemStack(DynamicTreesCompat.getIronwoodSeed()), Ingredient.fromItem(ModItems.IRONBERRIES));
@@ -452,6 +462,15 @@ public class Recipes {
 					'W', "wax",
 					'I', "ingotSilver"
 			).setRegistryName(new ResourceLocation(Rustic.MODID, "candle_silver")));
+			GameRegistry.findRegistry(IRecipe.class).register(new ShapedOreRecipe(null,
+					new ItemStack(ModBlocks.CANDLE_DOUBLE_SILVER, 4),
+						"S S",
+						"W W",
+						" I ",
+					'S', new ItemStack(Items.STRING),
+					'W', "wax",
+					'I', "ingotSilver"
+			).setRegistryName(new ResourceLocation(Rustic.MODID, "candle_double_silver")));
 			GameRegistry.findRegistry(IRecipe.class).register(new ShapedOreRecipe(null,
 					new ItemStack(ModBlocks.CANDLE_LEVER_SILVER, 1),
 						"C",
@@ -505,6 +524,15 @@ public class Recipes {
 		}
 		crushingTubRecipes
 				.add(new CrushingTubRecipe(new FluidStack(ModFluids.HONEY, 250), new ItemStack(ModItems.HONEYCOMB)));
+		if (!Loader.isModLoaded("dynamictrees")) {
+			crushingTubRecipes.add(new CrushingTubRecipe(new FluidStack(ModFluids.GOLDEN_APPLE_JUICE, 100), new ItemStack(Items.GOLDEN_APPLE, 1, 0), new ItemStack(ModBlocks.APPLE_SEEDS)));
+			crushingTubRecipes.add(new CrushingTubRecipe(new FluidStack(ModFluids.GOLDEN_APPLE_JUICE, 1000), new ItemStack(Items.GOLDEN_APPLE, 1, 1), new ItemStack(ModBlocks.APPLE_SEEDS)));
+		} else {
+			crushingTubRecipes.add(new CrushingTubRecipe(new FluidStack(ModFluids.GOLDEN_APPLE_JUICE, 100), new ItemStack(Items.GOLDEN_APPLE, 1, 0), new ItemStack(DynamicTreesCompat.getAppleSeed())));
+			crushingTubRecipes.add(new CrushingTubRecipe(new FluidStack(ModFluids.GOLDEN_APPLE_JUICE, 1000), new ItemStack(Items.GOLDEN_APPLE, 1, 1), new ItemStack(DynamicTreesCompat.getAppleSeed())));
+		}
+		crushingTubRecipes
+			.add(new CrushingTubRecipe(new FluidStack(ModFluids.VANTA_OIL, 250), new ItemStack(Herbs.VANTA_LILY)));
 	}
 
 	private static void addEvaporatingRecipes() {
@@ -513,6 +541,13 @@ public class Recipes {
 				new EvaporatingBasinRecipe(
 						new ItemStack(ModItems.IRON_DUST_TINY, 1),
 						new FluidStack(ModFluids.IRONBERRY_JUICE, 500)
+				)
+		);
+		evaporatingRecipesMap.put(
+				ModFluids.GOLDEN_APPLE_JUICE,
+				new EvaporatingBasinRecipe(
+						new ItemStack(ModItems.GOLD_DUST, 1),
+						new FluidStack(ModFluids.GOLDEN_APPLE_JUICE, 100)
 				)
 		);
 	}
@@ -614,6 +649,54 @@ public class Recipes {
 				new FluidStack(ModFluids.WILDBERRY_JUICE, 1)));
 		brewingRecipes.add(
 				new BrewingBarrelRecipe(new FluidStack(ModFluids.WINE, 1), new FluidStack(ModFluids.GRAPE_JUICE, 1)));
+		brewingRecipes.add(new BrewingBarrelRecipe(new FluidStack(ModFluids.AMBROSIA, 1), new FluidStack(ModFluids.GOLDEN_APPLE_JUICE, 1)) {
+			@Override
+			public FluidStack getResult(FluidStack in) {
+				if (matches(in) && output != null && output.getFluid() != null) {
+					FluidStack out = output.copy();
+					if (output.getFluid() instanceof FluidBooze) {
+						if (out.tag == null) {
+							out.tag = new NBTTagCompound();
+						}
+						int r;
+						if (rand.nextInt(4) == 0) {
+							r = rand.nextInt(26);
+						} else {							
+							r = rand.nextInt(12) + 14;
+						}
+						out.tag.setFloat(FluidBooze.QUALITY_NBT_KEY, ((49 + r) / 100F));
+					}
+					return out;
+				}
+				return null;
+			}
+			@Override
+			public FluidStack getResult(FluidStack in, FluidStack aux) {
+				if (aux == null || aux.getFluid() == null || !matches(in, aux) || !(aux.getFluid() instanceof FluidBooze)) {
+					return getResult(in);
+				}
+				if (matches(in, aux) && output != null && output.getFluid() != null) {
+					FluidStack out = output.copy();
+					if (output.getFluid() instanceof FluidBooze && aux.tag != null && aux.tag.hasKey(FluidBooze.QUALITY_NBT_KEY)) {
+						float auxQuality = aux.tag.getFloat(FluidBooze.QUALITY_NBT_KEY);
+						if (Config.MAX_BREW_QUALITY_CHANGE < Config.MIN_BREW_QUALITY_CHANGE) {
+							Config.MAX_BREW_QUALITY_CHANGE = Config.MIN_BREW_QUALITY_CHANGE;
+						}
+						int minChange = Math.max(0, Config.MIN_BREW_QUALITY_CHANGE);
+						int maxChange = Math.max(7, Config.MAX_BREW_QUALITY_CHANGE);
+						
+						int brewQualityChange = rand.nextInt((maxChange - minChange) + 1) + minChange;
+						float quality = Math.max(Math.min(((brewQualityChange + (int) (100 * auxQuality)) / 100F), 1), 0);
+						if (out.tag == null) {
+							out.tag = new NBTTagCompound();
+						}
+						out.tag.setFloat(FluidBooze.QUALITY_NBT_KEY, quality);
+					}
+					return out;
+				}
+				return null;
+			}
+		});
 	}
 
 }
